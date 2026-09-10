@@ -62,6 +62,8 @@
     table.diff .diff_chg { background: #fff0a8; border-radius: 2px; }
     table.diff tbody tr:has(> td.diff_header:empty) { background: #fbfbfc; }
     table.diff tbody tr:has(> td.diff_header:empty) td.diff_header { background: #f0f1f3; }
+    /* cada bloque de cambio (con su contexto) llega en su propio <tbody>: separarlos visualmente */
+    table.diff tbody + tbody tr:first-child td { border-top: 2px dashed var(--bd); padding-top: 10px; }
   </style>
 </head>
 <body>

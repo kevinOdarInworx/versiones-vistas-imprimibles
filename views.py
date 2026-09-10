@@ -109,5 +109,7 @@ def build_diff(sql_a: str, sql_b: str, label_a: str, label_b: str, ignore_whites
         return {"html": "", "stats": stats}
 
     hd = difflib.HtmlDiff(tabsize=4)
-    table = hd.make_table(cmp_a, cmp_b, fromdesc=label_a, todesc=label_b, context=False)
+    # context=True: solo muestra las lineas afectadas (agregadas/eliminadas/
+    # modificadas) mas un par de lineas de contexto alrededor, no la vista completa.
+    table = hd.make_table(cmp_a, cmp_b, fromdesc=label_a, todesc=label_b, context=True, numlines=2)
     return {"html": table, "stats": stats}
