@@ -1,0 +1,14 @@
+# Secrets / entorno local
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Por si en algun momento se copia una clave o el instant client localmente
+# (por defecto esta app los referencia desde generar-imprimibles, no los trae):
+*.pem
+keys/
+oracle/

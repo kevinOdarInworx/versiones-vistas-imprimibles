@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Versiones de vistas INSOR_DM</title>
+  <style>
+    :root {
+      --bd: #d0d5dd; --bg: #f7f8fa; --pri: #1f4e79;
+      --ok-bg: #ecfdf3; --ok-bd: #abefc6; --ok-tx: #067647;
+      --err-bg: #fef3f2; --err-bd: #fecdca; --err-tx: #b42318;
+    }
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, "Segoe UI", Arial, sans-serif; margin: 0; background: var(--bg); color: #1a1a1a; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 24px 16px 64px; }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    h2 { font-size: 15px; margin: 0 0 12px; }
+    p.sub { margin: 0 0 20px; color: #555; font-size: 14px; }
+    .card { background: #fff; border: 1px solid var(--bd); border-radius: 10px; padding: 18px; margin-bottom: 16px; }
+    label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
+    input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--bd); border-radius: 8px; font-size: 14px; background: #fff; }
+    .row { display: grid; grid-template-columns: 1fr 220px; gap: 12px; align-items: end; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr 160px auto; gap: 12px; align-items: end; }
+    button { background: var(--pri); color: #fff; border: 0; padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+    button.secondary { background: #eef2f7; color: var(--pri); }
+    button:disabled { opacity: .6; cursor: default; }
+    .hint { font-size: 12px; color: #667085; margin-top: 8px; min-height: 16px; }
+    .error { color: var(--err-tx); font-size: 14px; }
+    .muted { color: #667085; font-size: 13px; }
+    .checkline { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 400; color: #344054; }
+    .checkline input { width: auto; }
+
+    table.summary { width: 100%; border-collapse: collapse; font-size: 13px; }
+    table.summary th, table.summary td { text-align: left; padding: 9px 10px; border-bottom: 1px solid #eee; }
+    table.summary th { background: #f0f3f7; font-weight: 600; }
+    .group-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 11px; font-weight: 700; color: #fff; margin-right: 8px; }
+    .status-ok { color: var(--ok-tx); font-weight: 600; }
+    .status-bad { color: var(--err-tx); font-weight: 600; }
+    .status-miss { color: #98a2b3; }
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 12px; font-size: 12px; color: #475467; }
+    .legend .sw { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+    .banner { border-radius: 8px; padding: 12px 14px; font-size: 14px; font-weight: 600; }
+    .banner.ok { background: var(--ok-bg); border: 1px solid var(--ok-bd); color: var(--ok-tx); }
+    .banner.warn { background: #fffaeb; border: 1px solid #fedf89; color: #93710a; }
+    .stats { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+    .badge { background: #eef2f7; border: 1px solid var(--bd); border-radius: 6px; padding: 3px 8px; font-size: 12px; }
+
+    .difftable-wrap { overflow-x: auto; border: 1px solid var(--bd); border-radius: 8px; margin-top: 12px; }
+    table.diff { border-collapse: collapse; width: 100%; font-family: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace; font-size: 12.5px; }
+    table.diff colgroup:nth-child(1), table.diff colgroup:nth-child(4) { width: 26px; }
+    table.diff colgroup:nth-child(2), table.diff colgroup:nth-child(5) { width: 44px; }
+    table.diff thead th.diff_header { background: var(--pri); color: #fff; font-weight: 600; text-align: left; padding: 8px 10px; font-family: system-ui, "Segoe UI", Arial, sans-serif; font-size: 12.5px; }
+    table.diff thead th.diff_next { background: var(--pri); }
+    table.diff tbody td { padding: 2px 8px; vertical-align: top; }
+    table.diff tbody td.diff_header { background: #f7f8fa; color: #98a2b3; text-align: right; user-select: none; border-right: 1px solid #eee; white-space: nowrap; }
+    table.diff tbody td.diff_next { text-align: center; width: 20px; }
+    table.diff tbody td.diff_next a { color: #b0b7c3; text-decoration: none; font-size: 10px; }
+    table.diff tbody td[nowrap] { white-space: pre; }
+    table.diff .diff_add { background: #c9f2d3; border-radius: 2px; }
+    table.diff .diff_sub { background: #ffd3d1; border-radius: 2px; }
+    table.diff .diff_chg { background: #fff0a8; border-radius: 2px; }
+    table.diff tbody tr:has(> td.diff_header:empty) { background: #fbfbfc; }
+    table.diff tbody tr:has(> td.diff_header:empty) td.diff_header { background: #f0f1f3; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Versiones de vistas — INSOR_DM</h1>
+    <p class="sub">Compara el SQL (el SELECT del CREATE VIEW) de una misma vista entre ambientes GDS/RAWDB.</p>
+
+    <div class="card">
+      <div class="row">
+        <div>
+          <label for="viewName">Nombre de la vista</label>
+          <input id="viewName" list="viewNames" placeholder="Ej: CAR_IND_DANIOS_VIEW" autocomplete="off" />
+          <datalist id="viewNames"></datalist>
+        </div>
+        <button id="btnBuscar">Buscar en todos los ambientes</button>
+      </div>
+      <div class="hint" id="hint"></div>
+    </div>
+
+    <div class="card" id="summaryCard" style="display:none">
+      <h2>Resumen por ambiente</h2>
+      <div id="summaryBody"></div>
+    </div>
+
+    <div class="card" id="compareCard" style="display:none">
+      <h2>Comparar dos ambientes</h2>
+      <div class="row3">
+        <div>
+          <label for="envA">Ambiente A</label>
+          <select id="envA">
+            {% for e in environments %}<option value="{{ e.key }}">{{ e.label }}</option>{% endfor %}
+          </select>
+        </div>
+        <div>
+          <label for="envB">Ambiente B</label>
+          <select id="envB">
+            {% for e in environments %}<option value="{{ e.key }}">{{ e.label }}</option>{% endfor %}
+          </select>
+        </div>
+        <label class="checkline" style="margin-bottom:10px">
+          <input type="checkbox" id="ignoreWs" /> Ignorar espacios
+        </label>
+        <button id="btnDiff">Comparar</button>
+      </div>
+      <div id="diffResult" style="margin-top:14px"></div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const viewNameEl = $("viewName"), hintEl = $("hint"), btnBuscar = $("btnBuscar");
+    const summaryCard = $("summaryCard"), summaryBody = $("summaryBody");
+    const compareCard = $("compareCard"), envA = $("envA"), envB = $("envB");
+    const ignoreWs = $("ignoreWs"), btnDiff = $("btnDiff"), diffResult = $("diffResult");
+
+    const ENV_ORDER = [{% for e in environments %}"{{ e.key }}",{% endfor %}];
+    const ENV_LABEL = {{ environments|tojson }}.reduce((m, e) => (m[e.key] = e.label, m), {});
+    const GROUP_COLORS = ["#1f4e79", "#0e9384", "#b54708", "#7a5af8", "#c11574"];
+
+    let lastVersions = null; // { env_key: {found, sql, ...} }
+    let viewNamesLoadedFor = null;
+
+    async function loadViewNames(envKey) {
+      if (viewNamesLoadedFor === envKey) return;
+      try {
+        const res = await fetch("/views?env=" + encodeURIComponent(envKey));
+        const data = await res.json();
+        if (!res.ok || !data.views) return;
+        viewNamesLoadedFor = envKey;
+        const dl = $("viewNames");
+        dl.innerHTML = data.views.map(v => `<option value="${v}"></option>`).join("");
+      } catch { /* autocompletar es best-effort */ }
+    }
+
+    viewNameEl.addEventListener("focus", () => {
+      loadViewNames(envA.value || ENV_ORDER[0]);
+    });
+
+    btnBuscar.addEventListener("click", buscar);
+    viewNameEl.addEventListener("keydown", (e) => { if (e.key === "Enter") buscar(); });
+
+    async function buscar() {
+      const viewName = viewNameEl.value.trim();
+      if (!viewName) { viewNameEl.focus(); return; }
+
+      btnBuscar.disabled = true; btnBuscar.textContent = "Consultando ambientes...";
+      hintEl.textContent = "Abriendo tuneles y consultando DBA_VIEWS en cada ambiente (puede tardar la primera vez)...";
+      summaryCard.style.display = "none";
+      compareCard.style.display = "none";
+      diffResult.innerHTML = "";
+
+      try {
+        const res = await fetch("/versions", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ view_name: viewName })
+        });
+        const data = await res.json();
+        if (!res.ok) { hintEl.innerHTML = '<span class="error">' + (data.error || "Error") + '</span>'; return; }
+        hintEl.textContent = "";
+        lastVersions = data.environments;
+        renderSummary(data.view_name, lastVersions);
+        setupCompare(lastVersions);
+      } catch (err) {
+        hintEl.innerHTML = '<span class="error">Error de red: ' + err + '</span>';
+      } finally {
+        btnBuscar.disabled = false; btnBuscar.textContent = "Buscar en todos los ambientes";
+      }
+    }
+
+    function groupByMd5(versions) {
+      const groups = []; // [{ md5, envs: [] }]
+      for (const key of ENV_ORDER) {
+        const v = versions[key];
+        if (!v || !v.found) continue;
+        let g = groups.find(g => g.md5 === v.md5);
+        if (!g) { g = { md5: v.md5, envs: [] }; groups.push(g); }
+        g.envs.push(key);
+      }
+      return groups;
+    }
+
+    function renderSummary(viewName, versions) {
+      const groups = groupByMd5(versions);
+      const groupIndex = {};
+      groups.forEach((g, i) => g.envs.forEach(e => groupIndex[e] = i));
+
+      let html = `<div class="muted" style="margin-bottom:10px">Vista <strong>${viewName}</strong> — `;
+      if (groups.length <= 1 && groups.length > 0) {
+        html += `<span class="status-ok">el SQL es idéntico en todos los ambientes donde existe.</span>`;
+      } else if (groups.length > 1) {
+        html += `<span class="status-bad">hay ${groups.length} versiones distintas entre ambientes.</span>`;
+      } else {
+        html += `<span class="status-miss">no se encontró en ningún ambiente consultado.</span>`;
+      }
+      html += `</div><table class="summary"><thead><tr><th>Ambiente</th><th>Esquema</th><th>Estado</th><th>Líneas</th><th>Caracteres</th></tr></thead><tbody>`;
+
+      for (const key of ENV_ORDER) {
+        const v = versions[key];
+        html += `<tr><td>${ENV_LABEL[key]}</td>`;
+        if (v && v.found) {
+          const gi = groupIndex[key];
+          const color = GROUP_COLORS[gi % GROUP_COLORS.length];
+          const letter = String.fromCharCode(65 + gi);
+          html += `<td>${v.owner || "—"}</td>`;
+          html += `<td><span class="group-badge" style="background:${color}">${letter}</span><span class="status-ok">Encontrada</span></td>`;
+          html += `<td>${v.line_count}</td><td>${v.char_count}</td>`;
+        } else if (v && v.error) {
+          html += `<td>—</td><td><span class="status-bad">Error: ${v.error}</span></td><td>—</td><td>—</td>`;
+        } else {
+          html += `<td>—</td><td><span class="status-miss">No existe</span></td><td>—</td><td>—</td>`;
+        }
+        html += `</tr>`;
+      }
+      html += `</tbody></table>`;
+
+      if (groups.length > 1) {
+        html += `<div class="legend">` + groups.map((g, i) =>
+          `<span><span class="sw" style="background:${GROUP_COLORS[i % GROUP_COLORS.length]}"></span>Versión ${String.fromCharCode(65 + i)}: ${g.envs.map(k => ENV_LABEL[k]).join(", ")}</span>`
+        ).join("") + `</div>`;
+      }
+
+      summaryBody.innerHTML = html;
+      summaryCard.style.display = "block";
+    }
+
+    function setupCompare(versions) {
+      const found = ENV_ORDER.filter(k => versions[k] && versions[k].found);
+      if (found.length < 1) { compareCard.style.display = "none"; return; }
+
+      const groups = groupByMd5(versions);
+      let defaultA, defaultB;
+      if (groups.length >= 2) {
+        defaultA = groups[0].envs[0];
+        defaultB = groups[1].envs[0];
+      } else if (found.includes("UAT") && found.includes("STST")) {
+        defaultA = "UAT"; defaultB = "STST";
+      } else {
+        defaultA = found[0]; defaultB = found[1] || found[0];
+      }
+
+      for (const sel of [envA, envB]) {
+        [...sel.options].forEach(o => o.disabled = !found.includes(o.value));
+      }
+      envA.value = defaultA;
+      envB.value = defaultB;
+      compareCard.style.display = "block";
+      runDiff();
+    }
+
+    btnDiff.addEventListener("click", runDiff);
+
+    async function runDiff() {
+      if (!lastVersions) return;
+      const a = lastVersions[envA.value], b = lastVersions[envB.value];
+      if (!a || !a.found) { diffResult.innerHTML = `<span class="error">La vista no existe en ${ENV_LABEL[envA.value]}.</span>`; return; }
+      if (!b || !b.found) { diffResult.innerHTML = `<span class="error">La vista no existe en ${ENV_LABEL[envB.value]}.</span>`; return; }
+      if (envA.value === envB.value) { diffResult.innerHTML = `<span class="muted">Elegí dos ambientes distintos para comparar.</span>`; return; }
+
+      btnDiff.disabled = true; btnDiff.textContent = "Comparando...";
+      diffResult.innerHTML = '<span class="muted">Calculando diferencias...</span>';
+      try {
+        const res = await fetch("/diff", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sql_a: a.sql, sql_b: b.sql,
+            label_a: ENV_LABEL[envA.value], label_b: ENV_LABEL[envB.value],
+            ignore_whitespace: ignoreWs.checked,
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) { diffResult.innerHTML = '<span class="error">' + (data.error || "Error") + '</span>'; return; }
+        renderDiff(data);
+      } catch (err) {
+        diffResult.innerHTML = '<span class="error">Error de red: ' + err + '</span>';
+      } finally {
+        btnDiff.disabled = false; btnDiff.textContent = "Comparar";
+      }
+    }
+
+    function renderDiff(data) {
+      const s = data.stats;
+      if (s.identical) {
+        diffResult.innerHTML = `<div class="banner ok">✅ El SQL es idéntico entre ${ENV_LABEL[envA.value]} y ${ENV_LABEL[envB.value]} (${s.lines_a} líneas).</div>`;
+        return;
+      }
+      let html = `<div class="stats">` +
+        `<span class="badge">Similitud: <strong>${s.similarity}%</strong></span>` +
+        `<span class="badge">${ENV_LABEL[envA.value]}: <strong>${s.lines_a}</strong> líneas</span>` +
+        `<span class="badge">${ENV_LABEL[envB.value]}: <strong>${s.lines_b}</strong> líneas</span>` +
+        `</div>` +
+        `<div class="legend">` +
+        `<span><span class="sw" style="background:#c9f2d3"></span>Agregado</span>` +
+        `<span><span class="sw" style="background:#ffd3d1"></span>Eliminado</span>` +
+        `<span><span class="sw" style="background:#fff0a8"></span>Modificado</span>` +
+        `</div>` +
+        `<div class="difftable-wrap">${data.html}</div>`;
+      diffResult.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
