@@ -20,7 +20,7 @@
     label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; }
     input, select { width: 100%; padding: 10px 12px; border: 1px solid var(--bd); border-radius: 8px; font-size: 14px; background: #fff; }
     .row { display: grid; grid-template-columns: 1fr 220px; gap: 12px; align-items: end; }
-    .row3 { display: grid; grid-template-columns: 1fr 1fr 160px auto; gap: 12px; align-items: end; }
+    .row3 { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
     button { background: var(--pri); color: #fff; border: 0; padding: 10px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; }
     button.secondary { background: #eef2f7; color: var(--pri); }
     button:disabled { opacity: .6; cursor: default; }
@@ -46,17 +46,19 @@
     .stats { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0; }
     .badge { background: #eef2f7; border: 1px solid var(--bd); border-radius: 6px; padding: 3px 8px; font-size: 12px; }
 
-    .difftable-wrap { overflow-x: auto; border: 1px solid var(--bd); border-radius: 8px; margin-top: 12px; }
-    table.diff { border-collapse: collapse; width: 100%; font-family: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace; font-size: 12.5px; }
-    table.diff colgroup:nth-child(1), table.diff colgroup:nth-child(4) { width: 26px; }
-    table.diff colgroup:nth-child(2), table.diff colgroup:nth-child(5) { width: 44px; }
+    .difftable-wrap { border: 1px solid var(--bd); border-radius: 8px; margin-top: 12px; }
+    table.diff { table-layout: fixed; border-collapse: collapse; width: 100%; font-family: ui-monospace, SFMono-Regular, Consolas, "Courier New", monospace; font-size: 12.5px; }
+    table.diff colgroup:nth-child(1), table.diff colgroup:nth-child(4) { width: 22px; }
+    table.diff colgroup:nth-child(2), table.diff colgroup:nth-child(5) { width: 40px; }
+    /* las columnas de contenido (3ra y 6ta) se reparten el ancho restante en partes iguales */
     table.diff thead th.diff_header { background: var(--pri); color: #fff; font-weight: 600; text-align: left; padding: 8px 10px; font-family: system-ui, "Segoe UI", Arial, sans-serif; font-size: 12.5px; }
     table.diff thead th.diff_next { background: var(--pri); }
     table.diff tbody td { padding: 2px 8px; vertical-align: top; }
     table.diff tbody td.diff_header { background: #f7f8fa; color: #98a2b3; text-align: right; user-select: none; border-right: 1px solid #eee; white-space: nowrap; }
     table.diff tbody td.diff_next { text-align: center; width: 20px; }
     table.diff tbody td.diff_next a { color: #b0b7c3; text-decoration: none; font-size: 10px; }
-    table.diff tbody td[nowrap] { white-space: pre; }
+    /* las lineas de SQL pueden ser muy largas: se ajustan al ancho de la columna en vez de forzar scroll horizontal */
+    table.diff tbody td[nowrap] { white-space: pre-wrap; overflow-wrap: anywhere; }
     table.diff .diff_add { background: #c9f2d3; border-radius: 2px; }
     table.diff .diff_sub { background: #ffd3d1; border-radius: 2px; }
     table.diff .diff_chg { background: #fff0a8; border-radius: 2px; }
@@ -103,9 +105,6 @@
             {% for e in environments %}<option value="{{ e.key }}">{{ e.label }}</option>{% endfor %}
           </select>
         </div>
-        <label class="checkline" style="margin-bottom:10px">
-          <input type="checkbox" id="ignoreWs" /> Ignorar espacios
-        </label>
         <button id="btnDiff">Comparar</button>
       </div>
       <div id="diffResult" style="margin-top:14px"></div>
@@ -117,7 +116,7 @@
     const viewNameEl = $("viewName"), hintEl = $("hint"), btnBuscar = $("btnBuscar");
     const summaryCard = $("summaryCard"), summaryBody = $("summaryBody");
     const compareCard = $("compareCard"), envA = $("envA"), envB = $("envB");
-    const ignoreWs = $("ignoreWs"), btnDiff = $("btnDiff"), diffResult = $("diffResult");
+    const btnDiff = $("btnDiff"), diffResult = $("diffResult");
 
     const ENV_ORDER = [{% for e in environments %}"{{ e.key }}",{% endfor %}];
     const ENV_LABEL = {{ environments|tojson }}.reduce((m, e) => (m[e.key] = e.label, m), {});
@@ -211,7 +210,7 @@
           html += `<td><span class="group-badge" style="background:${color}">${letter}</span><span class="status-ok">Encontrada</span></td>`;
           html += `<td>${v.line_count}</td><td>${v.char_count}</td>`;
         } else if (v && v.error) {
-          html += `<td>—</td><td><span class="status-bad">Error: ${v.error}</span></td><td>—</td><td>—</td>`;
+          html += `<td>—</td><td><span class="status-bad">No se pudo conectar: ${v.error}</span></td><td>—</td><td>—</td>`;
         } else {
           html += `<td>—</td><td><span class="status-miss">No existe</span></td><td>—</td><td>—</td>`;
         }
@@ -270,7 +269,6 @@
           body: JSON.stringify({
             sql_a: a.sql, sql_b: b.sql,
             label_a: ENV_LABEL[envA.value], label_b: ENV_LABEL[envB.value],
-            ignore_whitespace: ignoreWs.checked,
           })
         });
         const data = await res.json();

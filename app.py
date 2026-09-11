@@ -1,9 +1,11 @@
 """App web para comparar el SQL (el SELECT del CREATE VIEW) de una misma
 vista del esquema INSOR_DM entre distintos ambientes GDS/RAWDB.
 
-- /versions: trae el texto de la vista en los 5 ambientes de una sola vez y
-  los agrupa por contenido identico (para ver de un vistazo que ambientes
-  comparten "version" y cuales difieren).
+- /versions: intenta traer el texto de la vista en TODOS los ambientes (DEV
+  incluida) de una sola vez y los agrupa por contenido identico (para ver de
+  un vistazo que ambientes comparten "version" y cuales difieren). Si un
+  ambiente no responde (p.ej. DEV apagada) se reporta el error solo despues
+  de intentar la conexion, nunca antes.
 - /diff: calcula el diff lado a lado (difflib) entre dos textos ya traidos
   por el frontend (no vuelve a golpear la base).
 """
@@ -18,15 +20,10 @@ app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.json.sort_keys = False
 
-# DEV suele estar abajo a proposito (ambiente que no siempre esta activo):
-# se excluye de la comparacion automatica para no perder tiempo esperando su
-# tunel en cada busqueda. UAT/SIT/STST/PROD si suelen estar arriba.
-COMPARE_ENVIRONMENTS = {k: v for k, v in ENVIRONMENTS.items() if k != "DEV"}
-
 
 @app.route("/")
 def index():
-    envs = [{"key": k, "label": v["label"]} for k, v in COMPARE_ENVIRONMENTS.items()]
+    envs = [{"key": k, "label": v["label"]} for k, v in ENVIRONMENTS.items()]
     return render_template("index.html", environments=envs)
 
 
@@ -49,7 +46,7 @@ def versions():
         return jsonify({"error": "Falta el nombre de la vista."}), 400
 
     result = {}
-    for key in COMPARE_ENVIRONMENTS:
+    for key in ENVIRONMENTS:
         try:
             result[key] = get_view_source(key, view_name)
         except Exception as exc:
@@ -64,8 +61,7 @@ def diff():
     sql_b = data.get("sql_b") or ""
     label_a = data.get("label_a") or "A"
     label_b = data.get("label_b") or "B"
-    ignore_whitespace = bool(data.get("ignore_whitespace"))
-    return jsonify(build_diff(sql_a, sql_b, label_a, label_b, ignore_whitespace))
+    return jsonify(build_diff(sql_a, sql_b, label_a, label_b))
 
 
 if __name__ == "__main__":

@@ -85,13 +85,23 @@ def get_view_source(env_key: str, view_name: str) -> dict:
         conn.close()
 
 
-def build_diff(sql_a: str, sql_b: str, label_a: str, label_b: str, ignore_whitespace: bool) -> dict:
-    """Diff lado a lado (HTML) + estadisticas entre dos textos de vista."""
+def build_diff(sql_a: str, sql_b: str, label_a: str, label_b: str) -> dict:
+    """Diff lado a lado (HTML) + estadisticas entre dos textos de vista.
+
+    El SQL de estas vistas suele usar corridas de espacios (a veces decenas)
+    tanto al inicio de linea como en el medio, para alinear visualmente un
+    AND/ON bajo una columna lejana o un AS/comentario. Si se preservan tal
+    cual, una linea marcada como cambiada arrastra ese espacio invisible
+    dentro del <span> resaltado y, al ajustar por ancho de pantalla, se pinta
+    como una barra solida enorme. Por eso cada linea se normaliza a espacios
+    simples (sin importar donde caiga el espacio de mas) antes de comparar:
+    la indentacion exacta no es informacion relevante para este diff.
+    """
     lines_a = (sql_a or "").replace("\r\n", "\n").split("\n")
     lines_b = (sql_b or "").replace("\r\n", "\n").split("\n")
 
     def norm(line: str) -> str:
-        return " ".join(line.split()) if ignore_whitespace else line
+        return " ".join(line.split())
 
     cmp_a = [norm(l) for l in lines_a]
     cmp_b = [norm(l) for l in lines_b]
@@ -112,4 +122,9 @@ def build_diff(sql_a: str, sql_b: str, label_a: str, label_b: str, ignore_whites
     # context=True: solo muestra las lineas afectadas (agregadas/eliminadas/
     # modificadas) mas un par de lineas de contexto alrededor, no la vista completa.
     table = hd.make_table(cmp_a, cmp_b, fromdesc=label_a, todesc=label_b, context=True, numlines=2)
+    # difflib reemplaza cada espacio por &nbsp; (no separable). Con lineas de
+    # SQL largas eso impide que el navegador corte la linea en los espacios;
+    # se vuelve a espacio normal para que ajuste bien al ancho de pantalla
+    # (el contenedor usa white-space: pre-wrap, que preserva la indentacion).
+    table = table.replace("&nbsp;", " ")
     return {"html": table, "stats": stats}
