@@ -28,6 +28,24 @@ catalogo y devuelve el owner que encuentra.
    resaltada como cambiada arrastra ese padding y se ve como una barra solida
    al ajustar por ancho de pantalla).
 
+Ademas de los 5 ambientes de base hay una sexta fuente, **REPO**: el .sql de
+esa vista en el repo `Inworx/INSOR` (rama `develop`, carpeta `GDS/FASE 1`),
+leido del clon local (`REPO_VIEWS_DIR` en `.env`) via `repo_views.py` — no
+toca GitHub ni la base. Cada `.sql` trae (comentado o como DDL real) un
+encabezado `CREATE OR REPLACE ... VIEW owner.view_name (...) AS`; de ahi se
+saca el nombre de la vista (para indexarla) y el punto donde arranca el
+SELECT real, descartando encabezado/comentarios previos y un `;` final. Si
+el mismo nombre de vista aparece en mas de un archivo (versiones viejas en
+`Deprecadas/` o `Versiones en prod/`), gana el archivo de nivel superior.
+Se integra en `/versions` y `/views?env=REPO` exactamente igual que un
+ambiente de base (mismo `md5`/`line_count`/`char_count`), asi que participa
+del agrupamiento por hash y de los selectores de comparacion sin logica
+especial en el frontend. Los `.sql` del repo estan guardados en
+**Windows-1252** (`REPO_FILE_ENCODING` en `.env`, default `cp1252`), no
+UTF-8 — leerlos como UTF-8 corrompe tildes/eñes (`errors="replace"` los
+vuelve `U+FFFD`) y el diff marcaba diferencias falsas en cualquier comentario
+o string con acentos.
+
 ## Pestaña "Imprimibles → vistas"
 
 No toca la base: analiza en disco los `.jrxml` (definiciones Jasper) bajo
@@ -47,6 +65,8 @@ todas las vistas unicas usadas en el arbol completo.
   `/imprimibles/families`, `/imprimibles/reports`, `/imprimibles/tree`.
 - `views.py` — `list_views` / `get_view_source` (lectura de DBA_VIEWS.TEXT)
   y `build_diff` (diff con `difflib`).
+- `repo_views.py` — indice y lectura del repo INSOR (fuente "REPO"), sin
+  dependencia de la base ni de la API de GitHub (trabaja sobre el clon local).
 - `printouts.py` — analisis de `.jrxml` (arbol de subreportes + objetos SQL
   por nodo), sin dependencia de la base.
 - `db.py` — tunel SSH + conexion Oracle (modo thick), copiado tal cual de

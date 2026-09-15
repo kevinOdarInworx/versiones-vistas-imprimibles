@@ -11,6 +11,11 @@ vista del esquema INSOR_DM entre distintos ambientes GDS/RAWDB.
 - /imprimibles/*: analiza los .jrxml de PRINTOUTS/FASE_1 (sin tocar la base)
   para armar el arbol de subreportes de un imprimible y que vistas/tablas
   consulta cada uno.
+
+Ademas de los ambientes de base, se agrega REPO como una fuente mas: el
+.sql de esa vista en el repo INSOR (GitHub Inworx/INSOR, GDS/FASE 1), leido
+del clon local. Se integra en /versions y /views igual que un ambiente de
+base para poder comparar "que hay en Oracle" contra "que hay en el repo".
 """
 from __future__ import annotations
 
@@ -18,22 +23,28 @@ from flask import Flask, jsonify, render_template, request
 
 from config.environments import ENVIRONMENTS
 import printouts
+import repo_views
 from views import build_diff, get_view_source, list_views
 
 app = Flask(__name__)
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 app.json.sort_keys = False
 
+REPO_KEY = "REPO"
+
 
 @app.route("/")
 def index():
     envs = [{"key": k, "label": v["label"]} for k, v in ENVIRONMENTS.items()]
+    envs.append({"key": REPO_KEY, "label": "Repo GitHub (INSOR/develop)"})
     return render_template("index.html", environments=envs)
 
 
 @app.route("/views")
 def views_route():
     env = request.args.get("env", "")
+    if env == REPO_KEY:
+        return jsonify({"views": sorted(repo_views.get_index())})
     if env not in ENVIRONMENTS:
         return jsonify({"error": "Ambiente invalido."}), 400
     try:
@@ -55,6 +66,10 @@ def versions():
             result[key] = get_view_source(key, view_name)
         except Exception as exc:
             result[key] = {"found": False, "error": f"{type(exc).__name__}: {exc}"}
+    try:
+        result[REPO_KEY] = repo_views.get_repo_source(view_name)
+    except Exception as exc:
+        result[REPO_KEY] = {"found": False, "error": f"{type(exc).__name__}: {exc}"}
     return jsonify({"view_name": view_name.upper(), "environments": result})
 
 

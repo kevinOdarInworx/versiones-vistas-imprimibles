@@ -213,6 +213,7 @@
           <div>
             <label for="envB">Ambiente B</label>
             <select id="envB">
+              <option value="">— Elegí un ambiente —</option>
               {% for e in environments %}<option value="{{ e.key }}">{{ e.label }}</option>{% endfor %}
             </select>
           </div>
@@ -271,7 +272,11 @@
     }
 
     viewNameEl.addEventListener("focus", () => {
-      loadViewNames(envA.value || ENV_ORDER[0]);
+      // Siempre PROD como referencia para el autocompletar (suele estar
+      // arriba). No usar envA.value: el <select>, aunque este oculto antes
+      // de la primera busqueda, ya tiene un valor por defecto (DEV, la
+      // primera opcion) que nunca queda "vacio" para caer en el fallback.
+      loadViewNames("PROD");
     });
 
     btnBuscar.addEventListener("click", buscar);
@@ -339,7 +344,7 @@
           const gi = groupIndex[key];
           const color = GROUP_COLORS[gi % GROUP_COLORS.length];
           const letter = String.fromCharCode(65 + gi);
-          html += `<td>${v.owner || "—"}</td>`;
+          html += `<td>${v.owner || v.file || "—"}</td>`;
           html += `<td><span class="group-badge" style="background:${color}">${letter}</span><span class="pill pill-ok">✓ Encontrada</span></td>`;
           html += `<td>${v.line_count}</td><td>${v.char_count}</td>`;
         } else if (v && v.error) {
@@ -365,30 +370,24 @@
       const found = ENV_ORDER.filter(k => versions[k] && versions[k].found);
       if (found.length < 1) { compareCard.style.display = "none"; return; }
 
-      const groups = groupByMd5(versions);
-      let defaultA, defaultB;
-      if (groups.length >= 2) {
-        defaultA = groups[0].envs[0];
-        defaultB = groups[1].envs[0];
-      } else if (found.includes("UAT") && found.includes("STST")) {
-        defaultA = "UAT"; defaultB = "STST";
-      } else {
-        defaultA = found[0]; defaultB = found[1] || found[0];
-      }
-
       for (const sel of [envA, envB]) {
-        [...sel.options].forEach(o => o.disabled = !found.includes(o.value));
+        [...sel.options].forEach(o => { if (o.value !== "") o.disabled = !found.includes(o.value); });
       }
-      envA.value = defaultA;
-      envB.value = defaultB;
+      // Ambiente A: el repo por defecto (es la referencia "declarativa"), si
+      // esta disponible para esta vista; si no, el primero encontrado.
+      // Ambiente B: se deja sin elegir a proposito, para que el usuario
+      // decida contra que ambiente de base comparar.
+      envA.value = found.includes("REPO") ? "REPO" : found[0];
+      envB.value = "";
       compareCard.style.display = "block";
-      runDiff();
+      diffResult.innerHTML = '<span class="muted">Elegí el ambiente B y presioná "Comparar".</span>';
     }
 
     btnDiff.addEventListener("click", runDiff);
 
     async function runDiff() {
       if (!lastVersions) return;
+      if (!envA.value || !envB.value) { diffResult.innerHTML = `<span class="muted">Elegí los dos ambientes a comparar.</span>`; return; }
       const a = lastVersions[envA.value], b = lastVersions[envB.value];
       if (!a || !a.found) { diffResult.innerHTML = `<span class="error">La vista no existe en ${ENV_LABEL[envA.value]}.</span>`; return; }
       if (!b || !b.found) { diffResult.innerHTML = `<span class="error">La vista no existe en ${ENV_LABEL[envB.value]}.</span>`; return; }
