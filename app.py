@@ -8,12 +8,16 @@ vista del esquema INSOR_DM entre distintos ambientes GDS/RAWDB.
   de intentar la conexion, nunca antes.
 - /diff: calcula el diff lado a lado (difflib) entre dos textos ya traidos
   por el frontend (no vuelve a golpear la base).
+- /imprimibles/*: analiza los .jrxml de PRINTOUTS/FASE_1 (sin tocar la base)
+  para armar el arbol de subreportes de un imprimible y que vistas/tablas
+  consulta cada uno.
 """
 from __future__ import annotations
 
 from flask import Flask, jsonify, render_template, request
 
 from config.environments import ENVIRONMENTS
+import printouts
 from views import build_diff, get_view_source, list_views
 
 app = Flask(__name__)
@@ -62,6 +66,30 @@ def diff():
     label_a = data.get("label_a") or "A"
     label_b = data.get("label_b") or "B"
     return jsonify(build_diff(sql_a, sql_b, label_a, label_b))
+
+
+@app.route("/imprimibles/families")
+def imprimibles_families():
+    return jsonify({"families": printouts.list_families(), "dir": printouts.PRINTOUTS_DIR})
+
+
+@app.route("/imprimibles/reports")
+def imprimibles_reports():
+    family = request.args.get("family", "")
+    try:
+        return jsonify({"reports": printouts.list_reports(family)})
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+
+@app.route("/imprimibles/tree")
+def imprimibles_tree():
+    family = request.args.get("family", "")
+    report = request.args.get("report", "")
+    try:
+        return jsonify(printouts.get_tree(family, report))
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
 
 
 if __name__ == "__main__":

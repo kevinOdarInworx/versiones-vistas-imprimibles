@@ -143,6 +143,29 @@
     table.diff tbody tr:has(> td.diff_header:empty) td.diff_header { background: var(--border); }
     /* cada bloque de cambio (con su contexto) llega en su propio <tbody>: separarlos visualmente */
     table.diff tbody + tbody tr:first-child td { border-top: 2px dashed var(--border); padding-top: 12px; }
+
+    .tabs { display: flex; gap: 6px; margin-bottom: 20px; border-bottom: 1px solid var(--border); }
+    .tab-btn { background: none; color: var(--text-muted); box-shadow: none; padding: 10px 4px; border-radius: 0; font-weight: 600; position: relative; margin-right: 18px; }
+    .tab-btn:hover:not(:disabled) { background: none; color: var(--text); }
+    .tab-btn.active { color: var(--primary); }
+    .tab-btn.active::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--primary); border-radius: 2px; }
+
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+
+    .tree { font-size: 13.5px; }
+    details.tree-node { margin: 2px 0; }
+    details.tree-node > summary { list-style: none; cursor: pointer; padding: 6px 10px; border-radius: 8px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    details.tree-node > summary::-webkit-details-marker { display: none; }
+    details.tree-node > summary::before { content: "▸"; color: var(--text-muted); font-size: 11px; transition: transform .12s; flex-shrink: 0; }
+    details.tree-node[open] > summary::before { transform: rotate(90deg); }
+    details.tree-node > summary:hover { background: var(--surface-2); }
+    .tree-label { font-weight: 700; }
+    .tree-file { font-weight: 400; color: var(--text-muted); font-size: 12px; }
+    .tree-children { margin-left: 20px; padding-left: 14px; border-left: 2px solid var(--border); }
+    .tree-leaf-row { margin: 4px 0 8px 34px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .obj-chip { display: inline-flex; align-items: center; gap: 5px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 11.5px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-muted); }
+    .obj-chip.is-view { border-color: var(--primary); color: var(--primary); background: var(--primary-soft); font-weight: 600; }
+    .tree-empty-leaf { margin-left: 34px; }
   </style>
 </head>
 <body>
@@ -151,46 +174,74 @@
       <div class="logo">🔍</div>
       <div>
         <h1>Versiones de vistas — INSOR_DM</h1>
-        <p class="sub">Compara el SQL (el SELECT del CREATE VIEW) de una misma vista entre ambientes GDS/RAWDB.</p>
+        <p class="sub">Compara el SQL de una vista entre ambientes y explorá qué vistas consume cada imprimible.</p>
       </div>
     </header>
 
-    <div class="card">
-      <label for="viewName">Nombre de la vista</label>
-      <div class="searchbar">
-        <div>
-          <input id="viewName" list="viewNames" placeholder="Ej: CAR_IND_DANIOS_VIEW" autocomplete="off" />
-          <datalist id="viewNames"></datalist>
-        </div>
-        <button id="btnBuscar">Buscar en todos los ambientes</button>
-      </div>
-      <div class="hint" id="hint"></div>
+    <div class="tabs">
+      <button class="tab-btn active" id="tabBtnCompare">Comparar vistas</button>
+      <button class="tab-btn" id="tabBtnPrintouts">Imprimibles → vistas</button>
     </div>
 
-    <div class="card" id="summaryCard" style="display:none">
-      <h2>Resumen por ambiente</h2>
-      <div id="summaryBody"></div>
-    </div>
-
-    <div class="card" id="compareCard" style="display:none">
-      <h2>Comparar dos ambientes</h2>
-      <div class="row3">
-        <div>
-          <label for="envA">Ambiente A</label>
-          <select id="envA">
-            {% for e in environments %}<option value="{{ e.key }}">{{ e.label }}</option>{% endfor %}
-          </select>
+    <section id="tabCompare">
+      <div class="card">
+        <label for="viewName">Nombre de la vista</label>
+        <div class="searchbar">
+          <div>
+            <input id="viewName" list="viewNames" placeholder="Ej: CAR_IND_DANIOS_VIEW" autocomplete="off" />
+            <datalist id="viewNames"></datalist>
+          </div>
+          <button id="btnBuscar">Buscar en todos los ambientes</button>
         </div>
-        <div>
-          <label for="envB">Ambiente B</label>
-          <select id="envB">
-            {% for e in environments %}<option value="{{ e.key }}">{{ e.label }}</option>{% endfor %}
-          </select>
-        </div>
-        <button id="btnDiff">Comparar</button>
+        <div class="hint" id="hint"></div>
       </div>
-      <div id="diffResult" style="margin-top:16px"></div>
-    </div>
+
+      <div class="card" id="summaryCard" style="display:none">
+        <h2>Resumen por ambiente</h2>
+        <div id="summaryBody"></div>
+      </div>
+
+      <div class="card" id="compareCard" style="display:none">
+        <h2>Comparar dos ambientes</h2>
+        <div class="row3">
+          <div>
+            <label for="envA">Ambiente A</label>
+            <select id="envA">
+              {% for e in environments %}<option value="{{ e.key }}">{{ e.label }}</option>{% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="envB">Ambiente B</label>
+            <select id="envB">
+              {% for e in environments %}<option value="{{ e.key }}">{{ e.label }}</option>{% endfor %}
+            </select>
+          </div>
+          <button id="btnDiff">Comparar</button>
+        </div>
+        <div id="diffResult" style="margin-top:16px"></div>
+      </div>
+    </section>
+
+    <section id="tabPrintouts" style="display:none">
+      <div class="card">
+        <div class="row2">
+          <div>
+            <label for="pfFamily">Familia de imprimibles</label>
+            <select id="pfFamily"><option value="">Cargando…</option></select>
+          </div>
+          <div>
+            <label for="pfReport">Reporte (raíz del árbol)</label>
+            <select id="pfReport" disabled><option value="">Elegí una familia primero</option></select>
+          </div>
+        </div>
+        <div class="hint" id="pfHint">Analiza los .jrxml de PRINTOUTS/FASE_1 en tu disco (no consulta la base). El reporte "master" se preselecciona cuando existe.</div>
+      </div>
+
+      <div class="card" id="pfResultCard" style="display:none">
+        <h2 id="pfTitle">Árbol de dependencias</h2>
+        <div id="pfTree" class="tree"></div>
+      </div>
+    </section>
   </div>
 
   <script>
@@ -381,6 +432,113 @@
         `</div>` +
         `<div class="difftable-wrap">${data.html}</div>`;
       diffResult.innerHTML = html;
+    }
+
+    // ---- Pestañas ----
+    const tabBtnCompare = $("tabBtnCompare"), tabBtnPrintouts = $("tabBtnPrintouts");
+    const tabCompare = $("tabCompare"), tabPrintouts = $("tabPrintouts");
+
+    tabBtnCompare.addEventListener("click", () => switchTab("compare"));
+    tabBtnPrintouts.addEventListener("click", () => switchTab("printouts"));
+
+    function switchTab(which) {
+      const isCompare = which === "compare";
+      tabCompare.style.display = isCompare ? "block" : "none";
+      tabPrintouts.style.display = isCompare ? "none" : "block";
+      tabBtnCompare.classList.toggle("active", isCompare);
+      tabBtnPrintouts.classList.toggle("active", !isCompare);
+      if (!isCompare && !pfFamiliesLoaded) loadFamilies();
+    }
+
+    // ---- Imprimibles -> vistas ----
+    const pfFamily = $("pfFamily"), pfReport = $("pfReport"), pfHint = $("pfHint");
+    const pfResultCard = $("pfResultCard"), pfTitle = $("pfTitle"), pfTree = $("pfTree");
+    let pfFamiliesLoaded = false;
+
+    async function loadFamilies() {
+      pfFamiliesLoaded = true;
+      try {
+        const res = await fetch("/imprimibles/families");
+        const data = await res.json();
+        const families = data.families || [];
+        if (!families.length) {
+          pfFamily.innerHTML = '<option value="">No se encontraron imprimibles</option>';
+          pfHint.innerHTML = `<span class="error">No se encontró nada en ${data.dir || "la carpeta configurada"}.</span>`;
+          return;
+        }
+        pfFamily.innerHTML = families.map(f => `<option value="${f.name}">${f.name} (${f.report_count})</option>`).join("");
+        await loadReports(pfFamily.value);
+      } catch (err) {
+        pfFamily.innerHTML = '<option value="">Error</option>';
+        pfHint.innerHTML = '<span class="error">Error de red: ' + err + '</span>';
+      }
+    }
+
+    pfFamily.addEventListener("change", () => loadReports(pfFamily.value));
+    pfReport.addEventListener("change", () => { if (pfReport.value) loadTree(pfFamily.value, pfReport.value); });
+
+    async function loadReports(family) {
+      if (!family) return;
+      pfReport.disabled = true;
+      pfReport.innerHTML = '<option value="">Cargando…</option>';
+      pfResultCard.style.display = "none";
+      try {
+        const res = await fetch("/imprimibles/reports?family=" + encodeURIComponent(family));
+        const data = await res.json();
+        if (!res.ok) { pfReport.innerHTML = '<option value="">Error</option>'; return; }
+        const reports = data.reports || [];
+        pfReport.innerHTML = reports.map(r => `<option value="${r.name}">${r.is_master ? "★ " : ""}${r.name}</option>`).join("");
+        pfReport.disabled = false;
+        if (reports.length) { pfReport.value = reports[0].name; loadTree(family, reports[0].name); }
+      } catch (err) {
+        pfReport.innerHTML = '<option value="">Error de red</option>';
+      }
+    }
+
+    async function loadTree(family, report) {
+      pfResultCard.style.display = "block";
+      pfTitle.textContent = "Árbol de dependencias — " + report;
+      pfTree.innerHTML = '<span class="muted">Analizando .jrxml…</span>';
+      try {
+        const res = await fetch(`/imprimibles/tree?family=${encodeURIComponent(family)}&report=${encodeURIComponent(report)}`);
+        const data = await res.json();
+        if (!res.ok) { pfTree.innerHTML = '<span class="error">' + (data.error || "Error") + '</span>'; return; }
+        pfTree.innerHTML = renderTreeNode(data, true);
+      } catch (err) {
+        pfTree.innerHTML = '<span class="error">Error de red: ' + err + '</span>';
+      }
+    }
+
+    function renderTreeNode(node, isRoot) {
+      const children = node.children || [];
+      const queries = node.queries || [];
+      const badges = [
+        node.missing ? '<span class="pill pill-bad">no encontrado</span>' : "",
+        node.cycle ? '<span class="pill pill-miss">referencia circular</span>' : "",
+        node.error ? `<span class="pill pill-bad">XML inválido: ${node.error}</span>` : "",
+        queries.length ? `<span class="pill pill-miss">${queries.length} objeto(s)</span>` : "",
+        children.length ? `<span class="pill pill-miss">${children.length} subreporte(s)</span>` : "",
+      ].filter(Boolean).join(" ");
+
+      const summaryHtml = `<span class="tree-label">${node.name}</span>` +
+        (node.file && node.file !== node.name + ".jrxml" ? `<span class="tree-file">${node.file}</span>` : "") +
+        badges;
+
+      const leavesHtml = queries.length
+        ? `<div class="tree-leaf-row">` + queries.map(q =>
+            `<span class="obj-chip${q.is_view ? " is-view" : ""}">${q.is_view ? "🔷" : "▫️"} ${q.schema ? q.schema + "." : ""}${q.object}</span>`
+          ).join("") + `</div>`
+        : (children.length ? "" : '<div class="tree-leaf-row tree-empty-leaf muted">sin queries detectadas</div>');
+
+      const childrenHtml = children.length
+        ? `<div class="tree-children">${children.map(c => renderTreeNode(c, false)).join("")}</div>`
+        : "";
+
+      return `<details class="tree-node" ${isRoot ? "open" : ""}>
+        <summary>${summaryHtml}</summary>
+        ${leavesHtml}
+        ${childrenHtml}
+      </details>`;
     }
   </script>
 </body>
